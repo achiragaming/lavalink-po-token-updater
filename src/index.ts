@@ -39,22 +39,40 @@ const updateCycleMaxRetries = parseInt(
 );
 
 async function getNewToken(maxRetries = 5) {
-  const retryDelay = 2000;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await axios.get(`${tokenGeneratorUrl}/update`);
-      console.log(`Token received: ${response.data}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to get token (attempt ${attempt}/${maxRetries})`);
-      if (attempt === maxRetries) throw error;
-      console.log(`Retrying in ${retryDelay / 1000} seconds...`);
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    const retryDelay = 2000;
+  
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Get initial token
+        const initialToken = await axios.get(`${tokenGeneratorUrl}/token`);
+        const initialData = initialToken.data;
+  
+        // Trigger update
+        await axios.get(`${tokenGeneratorUrl}/update`);
+  
+        // Wait for new token
+        let attempts = 0;
+        const maxWaitAttempts = 10;
+        
+        while (attempts < maxWaitAttempts) {
+          const newToken = await axios.get(`${tokenGeneratorUrl}/token`);
+          if (newToken.data.potoken !== initialData.potoken) {
+            return newToken.data;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          attempts++;
+        }
+  
+        throw new Error("Token update timeout");
+      } catch (error) {
+        console.error(`Failed to get token (attempt ${attempt}/${maxRetries})`);
+        if (attempt === maxRetries) throw error;
+        console.log(`Retrying in ${retryDelay/1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
     }
   }
-}
-
+  
 async function updateLavalink(
   poToken: string,
   visitorData: string,
