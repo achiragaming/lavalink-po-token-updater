@@ -63,6 +63,7 @@ app.get("/helthz", (_: any, res) => {
 });
 
 async function start() {
+  console.log("Starting token update cycle...");
   await updateCycle();
   setInterval(updateCycle, updateInterval);
 
