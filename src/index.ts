@@ -21,7 +21,17 @@ const lavalinkUrl = new URL(
     lavalinkSecure ? "https" : "http"
   }://${lavalinkServerAddress}:${lavalinkServerPort}`
 ).href;
-const tokenGeneratorUrl = `http://localhost:8080`;
+const tokenGeneratorServerAddress =
+  process.env.TOKEN_GENERATOR_SERVER_ADDRESS || "localhost";
+const tokenGeneratorServerPort =
+  process.env.TOKEN_GENERATOR_SERVER_PORT || "8080";
+const tokenGeneratorSecure =
+  process.env.TOKEN_GENERATOR_SERVER_SECURE === "true";
+const tokenGeneratorUrl = new URL(
+  `${
+    tokenGeneratorSecure ? "https" : "http"
+  }://${tokenGeneratorServerAddress}:${tokenGeneratorServerPort}`
+).href;
 
 async function getNewToken() {
   const response = await axios.get(`${tokenGeneratorUrl}/update`);
