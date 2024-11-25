@@ -23,7 +23,7 @@ const lavalinkUrl = new URL(
 ).href;
 
 async function getNewToken() {
-  const { stdout } = await execFileAsync("youtube-trusted-session-generator");
+  const { stdout } = await execFileAsync("./startup.sh");
   const tokenData = JSON.parse(stdout);
   return {
     potoken: tokenData.potoken,
