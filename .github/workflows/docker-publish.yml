@@ -1,0 +1,28 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Debugging
+        run: |
+          ls -al
+          ls -al ./plugins
+           pwd
+
+      - name: Login to Private Registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login https://docker-registry.noerror.studio -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t docker-registry.noerror.studio/${{ secrets.REPO_NAME }}:latest .
+          docker push docker-registry.noerror.studio/${{ secrets.REPO_NAME }}:latest
