@@ -5,8 +5,7 @@ FROM quay.io/invidious/youtube-trusted-session-generator as token-generator
 FROM node:20
 
 # Copy token generator binary from first stage
-COPY --from=token-generator /usr/local/bin/youtube-trusted-session-generator /usr/local/bin/
-
+COPY --from=token-generator /app/youtube-trusted-session-generator /usr/local/bin/
 # Set up Node app
 WORKDIR /app
 COPY package*.json ./
