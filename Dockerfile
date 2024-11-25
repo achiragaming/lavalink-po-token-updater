@@ -5,7 +5,7 @@ FROM quay.io/invidious/youtube-trusted-session-generator:webserver as token-gene
 FROM token-generator-webserver
 
 # Set up Node environment
-RUN apk add --no-cache nodejs npm
+RUN apk add --no-cache nodejs npm netcat-openbsd
 
 
 # Set up Node app
