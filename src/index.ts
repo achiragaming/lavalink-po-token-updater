@@ -1,3 +1,5 @@
+import { config as dotenvConfig } from "dotenv";
+dotenvConfig();
 import express from "express";
 import axios from "axios";
 import { execFile } from "child_process";
@@ -10,19 +12,22 @@ const port = process.env.PORT || 8051;
 const updateInterval = parseInt(process.env.UPDATE_INTERVAL || "3600") * 1000;
 const lavalinkSecure = process.env.LAVALINK_SERVER_SECURE === "true";
 const lavalinkPassword = process.env.LAVALINK_SERVER_PASSWORD;
-const lavalinkServerAddress = process.env.LAVALINK_SERVER_ADDRESS || "localhost";
+const lavalinkServerAddress =
+  process.env.LAVALINK_SERVER_ADDRESS || "localhost";
 const lavalinkServerPort = process.env.LAVALINK_SERVER_PORT || "2333";
 
 const lavalinkUrl = new URL(
-  `${lavalinkSecure ? "https" : "http"}://${lavalinkServerAddress}:${lavalinkServerPort}`
+  `${
+    lavalinkSecure ? "https" : "http"
+  }://${lavalinkServerAddress}:${lavalinkServerPort}`
 ).href;
 
 async function getNewToken() {
-  const { stdout } = await execFileAsync('youtube-trusted-session-generator');
+  const { stdout } = await execFileAsync("youtube-trusted-session-generator");
   const tokenData = JSON.parse(stdout);
   return {
     potoken: tokenData.potoken,
-    visitor_data: tokenData.visitor_data
+    visitor_data: tokenData.visitor_data,
   };
 }
 
