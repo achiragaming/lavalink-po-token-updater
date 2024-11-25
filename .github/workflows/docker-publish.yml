@@ -16,7 +16,6 @@ jobs:
       - name: Debugging
         run: |
           ls -al
-          ls -al ./plugins
            pwd
 
       - name: Login to Private Registry
