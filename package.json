@@ -2,7 +2,7 @@
   "name": "lavalink-po-token-updater",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "swc src --out-dir dist --strip-leading-paths",
     "start": "npm run build && node dist/index.js",
