@@ -7,8 +7,7 @@ FROM token-generator
 # Set up Node environment
 RUN apk add --no-cache nodejs npm
 
-# Copy token generator binary from first stage
-COPY --from=token-generator /app/youtube-trusted-session-generator /usr/local/bin/
+
 # Set up Node app
 WORKDIR /app
 COPY package*.json ./
