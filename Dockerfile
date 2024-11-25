@@ -1,8 +1,8 @@
 # Stage 1: Token Generator
-FROM quay.io/invidious/youtube-trusted-session-generator as token-generator
+FROM quay.io/invidious/youtube-trusted-session-generator:webserver as token-generator-webserver
 
 # Stage 2: Node App
-FROM token-generator
+FROM token-generator-webserver
 
 # Set up Node environment
 RUN apk add --no-cache nodejs npm

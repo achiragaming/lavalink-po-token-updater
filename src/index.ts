@@ -21,14 +21,11 @@ const lavalinkUrl = new URL(
     lavalinkSecure ? "https" : "http"
   }://${lavalinkServerAddress}:${lavalinkServerPort}`
 ).href;
+const tokenGeneratorUrl = `http://localhost:8080`;
 
 async function getNewToken() {
-  const { stdout } = await execFileAsync("./startup.sh");
-  const tokenData = JSON.parse(stdout);
-  return {
-    potoken: tokenData.potoken,
-    visitor_data: tokenData.visitor_data,
-  };
+  const response = await axios.get(`${tokenGeneratorUrl}/update`);
+  return response.data;
 }
 
 async function updateLavalink(poToken: string, visitorData: string) {
