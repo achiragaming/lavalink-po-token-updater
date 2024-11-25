@@ -5,7 +5,6 @@ import axios from "axios";
 import { execFile } from "child_process";
 import { promisify } from "util";
 
-const execFileAsync = promisify(execFile);
 const app = express();
 const port = process.env.PORT || 8051;
 
@@ -20,7 +19,7 @@ const lavalinkUrl = new URL(
   `${
     lavalinkSecure ? "https" : "http"
   }://${lavalinkServerAddress}:${lavalinkServerPort}`
-).href;
+).href.replace(/\/$/, "");
 const tokenGeneratorServerAddress =
   process.env.TOKEN_GENERATOR_SERVER_ADDRESS || "localhost";
 const tokenGeneratorServerPort =
@@ -31,41 +30,94 @@ const tokenGeneratorUrl = new URL(
   `${
     tokenGeneratorSecure ? "https" : "http"
   }://${tokenGeneratorServerAddress}:${tokenGeneratorServerPort}`
-).href;
+).href.replace(/\/$/, "");
+const updateCycleFailedRetryDelay = parseInt(
+  process.env.UPDATE_CYCLE_FAILED_RETRY_DELAY || "30000"
+);
+const updateCycleMaxRetries = parseInt(
+  process.env.UPDATE_CYCLE_MAX_RETRIES || "10"
+);
 
-async function getNewToken() {
-  const response = await axios.get(`${tokenGeneratorUrl}/update`);
-  return response.data;
+async function getNewToken(maxRetries = 5) {
+  const retryDelay = 2000; // 2 seconds
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await axios.get(`${tokenGeneratorUrl}/update`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to get token (attempt ${attempt}/${maxRetries})`);
+      if (attempt === maxRetries) throw error;
+      console.log(`Retrying in ${retryDelay / 1000} seconds...`);
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
 }
 
-async function updateLavalink(poToken: string, visitorData: string) {
-  const response = await axios.post(
-    `${lavalinkUrl}/youtube`,
-    {
-      poToken,
-      visitorData,
-    },
-    {
-      headers: {
-        Authorization: lavalinkPassword,
-      },
-    }
-  );
+async function updateLavalink(
+  poToken: string,
+  visitorData: string,
+  maxRetries = 5
+) {
+  const retryDelay = 2000; // 2 seconds
 
-  return response.status === 204;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await axios.post(
+        `${lavalinkUrl}/youtube`,
+        {
+          poToken,
+          visitorData,
+        },
+        {
+          headers: {
+            Authorization: lavalinkPassword,
+          },
+        }
+      );
+
+      return response.status === 204;
+    } catch (error) {
+      console.error(
+        `Failed to update Lavalink (attempt ${attempt}/${maxRetries})`
+      );
+      if (attempt === maxRetries) throw error;
+      console.log(`Retrying in ${retryDelay / 1000} seconds...`);
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
 }
 
 async function updateCycle() {
-  try {
-    const tokenData = await getNewToken();
-    const success = await updateLavalink(
-      tokenData.potoken,
-      tokenData.visitor_data
-    );
-    console.log(success ? "Token update successful" : "Token update failed");
-  } catch (error) {
-    console.error("Token update failed:", error);
+  const maxRetries = updateCycleMaxRetries;
+  const retryDelay = updateCycleFailedRetryDelay; // 5 seconds
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const tokenData = await getNewToken(10);
+      const success = await updateLavalink(
+        tokenData.potoken,
+        tokenData.visitor_data,
+        10
+      );
+
+      if (success) {
+        console.log("Token update successful");
+        return;
+      }
+
+      console.log(`Token update failed, attempt ${attempt} of ${maxRetries}`);
+    } catch (error) {
+      console.error(`Token update failed (attempt ${attempt}):`, error);
+
+      if (attempt < maxRetries) {
+        console.log(`Retrying in ${retryDelay / 1000} seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
   }
+
+  console.error("All retry attempts failed, waiting for next update cycle");
 }
 
 app.get("/helthz", (_: any, res) => {
